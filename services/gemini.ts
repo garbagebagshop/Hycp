@@ -1,11 +1,10 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Station } from "../types";
 import { POLICE_STATIONS } from "../constants";
 
 /**
  * Uses Gemini to resolve a highly specific sub-locality or colony name from coordinates.
- * Includes a "double-check" instruction to avoid broad Mandal-level names.
+ * Specially tuned for Old City Hyderabad where PS limits are very dense.
  */
 export async function resolveAreaName(lat: number, lng: number): Promise<string> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -14,8 +13,7 @@ export async function resolveAreaName(lat: number, lng: number): Promise<string>
       model: "gemini-3-flash-preview",
       contents: `The user is at Coordinates (${lat}, ${lng}) in Hyderabad. 
       STRICT REQUIREMENT: Identify the most specific, localized neighborhood, colony, or sub-locality name. 
-      DO NOT return a broad Mandal name (like 'Rajendranagar') if a specific locality (like 'Mailardevpally', 'Shastripuram', or 'Katedan') is identifiable. 
-      DOUBLE-CHECK your geographic database for exact residential area names at this coordinate.
+      NOTE: This area (around 17.36) is high-density Old City. Distinguish between Hussaini Alam, Charminar, Shahinayathgunj, and Begum Bazar carefully.
       Return ONLY the specific name as a single string.`,
     });
 
@@ -31,13 +29,16 @@ export async function resolveAreaName(lat: number, lng: number): Promise<string>
  */
 export async function findNearbyStations(query: string, coords?: { lat: number; lng: number }): Promise<Station[]> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const stationDetails = POLICE_STATIONS.map(s => `${s.name} (${s.commissionerate})`).join(', ');
+  const stationDetails = POLICE_STATIONS.map(s => `${s.name} PS (${s.commissionerate})`).join(', ');
   
   const prompt = coords 
     ? `The user is at Coordinates (${coords.lat}, ${coords.lng}) in Hyderabad. 
        CORE TASK: Find the exact Police Station jurisdiction for this specific point. 
-       PRECISION RULE: Prioritize sub-locality stations (e.g. 'Mailardevpally PS') over larger administrative ones (e.g. 'Rajendranagar PS') if the user is within the sub-locality's known bounds.
-       VERIFICATION: Double-check that the chosen station is the actual legal jurisdiction for this residential area.
+       PRECISION RULE: In the Old City (South Zone), boundaries are tight. 
+       If the user is south of the Musi river near Chowmahalla, it is likely Hussaini Alam. 
+       If they are near the Charminar monument, it is Charminar PS. 
+       If they are in the wholesale markets near MJ Market, it is Begum Bazar.
+       If they are in Dhoolpet/Goshamahal, it is Shahinayathgunj.
        Available Stations: [${stationDetails}]. 
        Return ONLY a JSON array of the top 3 most relevant Station Names in order of proximity.`
     : `Find the police stations matching query: "${query}". 
