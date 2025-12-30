@@ -30,13 +30,16 @@ export interface LocationState {
 export interface FIRDraft {
   issueType: string;
   date: string;
+  time: string;
   location: string;
+  landmark: string;
   description: string;
   timestamp: string;
   complainantName: string;
   complainantPhone: string;
   suspectDetails: string;
   vehicleDetails: string;
+  witnessDetails: string;
   coords?: { lat: number; lng: number };
   imageData?: string;
 }
