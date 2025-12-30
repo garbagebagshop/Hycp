@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Station, Commissionerate } from '../types';
+import { POLICE_STATIONS } from '../constants';
 
 interface Props {
   station: Station;
   userCoords?: { lat: number, lng: number } | null;
+}
+
+// Distance helper for internal neighbors
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
 export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
@@ -23,6 +33,17 @@ export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
     }
     window.open(url, '_blank');
   };
+
+  const neighbors = useMemo(() => {
+    return POLICE_STATIONS
+      .filter(s => s.id !== station.id)
+      .map(s => ({
+        ...s,
+        dist: getDistanceKm(station.lat, station.lng, s.lat, s.lng)
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 2);
+  }, [station]);
 
   const badgeColor = (comm: Commissionerate) => {
     switch (comm) {
@@ -130,6 +151,28 @@ export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
               </div>
             </button>
           )}
+        </div>
+
+        {/* Nearby Alternatives Section */}
+        <div className="mt-6 pt-6 border-t border-slate-50">
+          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Nearby Alternatives</p>
+          <div className="flex gap-2">
+            {neighbors.map(neighbor => (
+              <div 
+                key={`neighbor-${neighbor.id}`}
+                className="flex-1 p-3 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col gap-1 cursor-pointer active:bg-slate-100 transition-colors"
+                onClick={() => handleCall(neighbor.phone)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-900 truncate pr-1">{neighbor.name}</span>
+                  <svg className="w-2.5 h-2.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                  </svg>
+                </div>
+                <p className="text-[7px] font-bold text-slate-400 uppercase truncate">~{neighbor.dist.toFixed(1)} km away</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
