@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
 import { POLICE_STATIONS } from './constants';
 import { Commissionerate, Station } from './types';
@@ -14,7 +13,6 @@ const App: React.FC = () => {
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
   const [currentArea, setCurrentArea] = useState<string | null>(null);
 
-  // Speed-optimized filtering
   const filteredStations = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     return POLICE_STATIONS.filter((station) => {
@@ -42,8 +40,6 @@ const App: React.FC = () => {
       async (position) => {
         try {
           const { latitude: lat, longitude: lng } = position.coords;
-          
-          // Execute in parallel for speed
           const [areaName, stations] = await Promise.all([
             resolveAreaName(lat, lng),
             findNearbyStations('', { lat, lng })
@@ -55,14 +51,12 @@ const App: React.FC = () => {
           if (stations.length > 0) {
             setActiveTab('All');
             setSearchTerm('');
-            
-            // Allow state to update and DOM to render before scrolling.
             setTimeout(() => {
               const resultsElement = document.getElementById('nearby-priority-section');
               if (resultsElement) {
                 resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
-            }, 100);
+            }, 500);
           }
         } catch (err) {
           setLocationError('Network error. Using search fallback.');
@@ -82,7 +76,6 @@ const App: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto min-h-screen flex flex-col bg-slate-50 transition-colors duration-300">
-      {/* Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-2xl border-b border-slate-200 px-4 pt-6 pb-4 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="transition-transform active:scale-95 cursor-default" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
@@ -108,7 +101,6 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        {/* Status Bar */}
         {currentArea && (
           <div className="mb-4 px-1 animate-in slide-in-from-top-4 fade-in duration-500">
             <div className="flex items-center justify-between bg-slate-900 p-3.5 rounded-2xl shadow-2xl border border-slate-800">
@@ -128,7 +120,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Search Input */}
         <div className="mb-5">
           <input
             type="text"
@@ -139,7 +130,6 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Category Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
           {tabs.map((tab) => (
             <button
@@ -157,8 +147,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Content Body */}
-      <main id="results-section" className="flex-1 px-4 py-6 safe-bottom overflow-y-auto">
+      <main id="results-section" className="flex-1 px-4 py-8 safe-bottom overflow-y-auto">
         {locationError && (
           <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl text-xs font-black border border-red-100 flex items-center gap-3 animate-bounce">
             <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
@@ -166,17 +155,16 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Nearby Priority Results */}
         {nearbyStations.length > 0 && !searchTerm && (
           <section 
             id="nearby-priority-section"
-            className="mb-10 animate-in fade-in zoom-in duration-500 scroll-mt-64 sm:scroll-mt-80"
+            className="mb-12 animate-in fade-in zoom-in duration-500 scroll-mt-[280px] sm:scroll-mt-[320px]"
           >
-            <div className="flex items-center gap-4 mb-6 px-1">
+            <div className="flex items-center gap-4 mb-8 px-1">
               <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Verified Jurisdictions</h2>
               <div className="h-[2px] flex-1 bg-blue-100/50 rounded-full"></div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {nearbyStations.map((station, idx) => (
                 <div key={`nearby-${station.id}`} className={idx === 0 ? "relative" : "opacity-60 scale-[0.98] blur-[0.3px] transition-all hover:opacity-100 hover:scale-100 hover:blur-0"}>
                   {idx === 0 && (
@@ -192,20 +180,18 @@ const App: React.FC = () => {
           </section>
         )}
 
-        {/* Quick Emergency Taps (Only visible when no results/search) */}
         {searchTerm === '' && activeTab === 'All' && !nearbyStations.length && (
           <div className="mb-8 animate-in fade-in duration-700 delay-200">
             <EmergencyControls />
           </div>
         )}
 
-        {/* General List */}
         <div className="mb-8">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-1 mb-6">
+          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-1 mb-8">
             {searchTerm ? `Results for "${searchTerm}"` : `Police Directory (${activeTab})`}
           </h2>
           
-          <div className="grid gap-4">
+          <div className="grid gap-6">
             {filteredStations.length > 0 ? (
               filteredStations.map((station) => (
                 <StationCard key={station.id} station={station} />
@@ -229,8 +215,22 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Smooth Footer */}
       <footer className="p-10 text-center bg-slate-100 border-t border-slate-200">
+        <div className="max-w-xs mx-auto mb-10 text-left">
+           <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+             <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
+             Data Verification
+           </h4>
+           <p className="text-[9px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">
+             The <span className="text-slate-900">94906</span> series are Official CUG numbers assigned to the Station House Officer (SHO) post. They are departmental lines and remain consistent regardless of personnel changes.
+           </p>
+           <div className="flex flex-wrap gap-2 mt-4">
+             <a href="https://www.hyderabadpolice.gov.in" target="_blank" className="text-[8px] font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md uppercase">Hyd City Web</a>
+             <a href="https://cyberabadpolice.gov.in" target="_blank" className="text-[8px] font-black text-emerald-600 bg-emerald-100 px-2 py-1 rounded-md uppercase">Cyberabad Web</a>
+             <a href="https://rachakondapolice.telangana.gov.in" target="_blank" className="text-[8px] font-black text-indigo-600 bg-indigo-100 px-2 py-1 rounded-md uppercase">Rachakonda Web</a>
+           </div>
+        </div>
+
         <div className="max-w-xs mx-auto">
           <p className="text-[10px] text-slate-400 font-black leading-relaxed uppercase tracking-tighter mb-8">
             Safety First. Reliable Directory.
@@ -250,7 +250,7 @@ const App: React.FC = () => {
              </div>
           </div>
           <div className="mt-10 pt-6 border-t border-slate-200">
-             <p className="text-[8px] text-slate-300 font-bold uppercase tracking-[0.3em]">Official Database v3.1</p>
+             <p className="text-[8px] text-slate-300 font-bold uppercase tracking-[0.3em]">Official Database v3.2</p>
           </div>
         </div>
       </footer>

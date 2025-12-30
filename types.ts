@@ -11,6 +11,7 @@ export interface Station {
   id: string;
   name: string;
   phone: string;
+  mobile?: string;
   secondaryPhone?: string;
   commissionerate: Commissionerate;
   area?: string;

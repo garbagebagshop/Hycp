@@ -3,13 +3,12 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Station } from "../types";
 import { POLICE_STATIONS } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-
 /**
  * Uses Gemini to resolve a highly specific sub-locality or colony name from coordinates.
  * Includes a "double-check" instruction to avoid broad Mandal-level names.
  */
 export async function resolveAreaName(lat: number, lng: number): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -31,6 +30,7 @@ export async function resolveAreaName(lat: number, lng: number): Promise<string>
  * Uses Gemini to find the most relevant police station based on coordinates or text.
  */
 export async function findNearbyStations(query: string, coords?: { lat: number; lng: number }): Promise<Station[]> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const stationDetails = POLICE_STATIONS.map(s => `${s.name} (${s.commissionerate})`).join(', ');
   
   const prompt = coords 
