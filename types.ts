@@ -1,4 +1,3 @@
-
 export enum Commissionerate {
   HYDERABAD_CITY = 'Hyderabad City',
   CYBERABAD = 'Cyberabad',
@@ -16,6 +15,8 @@ export interface Station {
   commissionerate: Commissionerate;
   area?: string;
   keywords: string[];
+  lat: number;
+  lng: number;
 }
 
 export interface LocationState {
