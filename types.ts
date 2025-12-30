@@ -26,3 +26,13 @@ export interface LocationState {
   loading: boolean;
   error: string | null;
 }
+
+export interface FIRDraft {
+  issueType: string;
+  date: string;
+  location: string;
+  description: string;
+  timestamp: string;
+  coords?: { lat: number; lng: number };
+  imageData?: string;
+}

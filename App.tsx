@@ -3,6 +3,7 @@ import { POLICE_STATIONS } from './constants';
 import { Commissionerate, Station } from './types';
 import { EmergencyControls } from './components/EmergencyControls';
 import { StationCard } from './components/StationCard';
+import { FIRDraftModal } from './components/FIRDraftModal';
 
 // Mathematical function to calculate distance between two GPS points
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
   const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filteredStations = useMemo(() => {
@@ -54,7 +56,6 @@ const App: React.FC = () => {
         const { latitude: lat, longitude: lng } = position.coords;
         setUserCoords({ lat, lng });
         
-        // Accurate mathematical calculation for specific PS Jurisdictions
         const sorted = [...POLICE_STATIONS].sort((a, b) => {
           const distA = getDistance(lat, lng, a.lat, a.lng);
           const distB = getDistance(lat, lng, b.lat, b.lng);
@@ -67,7 +68,6 @@ const App: React.FC = () => {
         setSearchTerm('');
         setIsDetecting(false);
 
-        // Smooth scroll with precise offset
         setTimeout(() => {
           const resultsElement = document.getElementById('nearby-priority-section');
           if (resultsElement) {
@@ -177,7 +177,7 @@ const App: React.FC = () => {
         )}
 
         <div className="mb-8">
-          <EmergencyControls />
+          <EmergencyControls onOpenDraft={() => setIsDraftModalOpen(true)} />
         </div>
 
         <div className="grid gap-8">
@@ -193,6 +193,12 @@ const App: React.FC = () => {
              </div>
           )}
         </div>
+
+        <FIRDraftModal 
+          isOpen={isDraftModalOpen} 
+          onClose={() => setIsDraftModalOpen(false)} 
+          userCoords={userCoords}
+        />
       </main>
 
       <footer className="p-10 text-center bg-slate-100 border-t border-slate-200">

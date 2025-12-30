@@ -35,7 +35,6 @@ export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
     }
   };
 
-  // Google Maps Search Embed (Works without API Key for basic location pinning)
   const mapEmbedUrl = `https://maps.google.com/maps?q=${station.lat},${station.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
@@ -91,9 +90,15 @@ export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
             </p>
           </div>
         )}
+
+        <div className="mb-4 px-2">
+          <p className="text-[8px] font-black text-red-500 uppercase tracking-tight flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+            False reporting attracts legal action
+          </p>
+        </div>
         
         <div className="flex flex-col gap-3">
-          {/* Main Primary Action */}
           <button
             onClick={() => handleCall(station.phone)}
             className="group flex items-center justify-between w-full p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 active:scale-[0.98] transition-all"
@@ -109,7 +114,6 @@ export const StationCard: React.FC<Props> = ({ station, userCoords }) => {
             </div>
           </button>
           
-          {/* Secondary Action */}
           {station.mobile && (
             <button
               onClick={() => handleCall(station.mobile!)}

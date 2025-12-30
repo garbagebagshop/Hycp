@@ -2,6 +2,7 @@
   "name": "HydPolice - Instant Emergency Contacts",
   "description": "A high-performance directory for Hyderabad, Cyberabad, and Rachakonda police stations. Find and call your nearest station instantly using geolocation or search.",
   "requestFramePermissions": [
-    "geolocation"
+    "geolocation",
+    "camera"
   ]
 }
