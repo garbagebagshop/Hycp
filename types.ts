@@ -33,6 +33,10 @@ export interface FIRDraft {
   location: string;
   description: string;
   timestamp: string;
+  complainantName: string;
+  complainantPhone: string;
+  suspectDetails: string;
+  vehicleDetails: string;
   coords?: { lat: number; lng: number };
   imageData?: string;
 }
