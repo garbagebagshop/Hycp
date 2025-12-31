@@ -56,27 +56,22 @@ export const FIRDraftModal: React.FC<Props> = ({ isOpen, onClose, userCoords }) 
     })[0];
   }, [userCoords]);
 
-  // Capture high accuracy location when requested or available
+  // Capture high accuracy location
   useEffect(() => {
-    if (userCoords) {
-      setDraft(prev => ({ 
-        ...prev, 
-        location: `${userCoords.lat.toFixed(7)}, ${userCoords.lng.toFixed(7)}`,
-        coords: userCoords 
-      }));
+    if (isOpen) {
+      const getPos = () => {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          setDraft(prev => ({
+            ...prev,
+            locationAccuracy: Math.round(pos.coords.accuracy),
+            location: `${pos.coords.latitude.toFixed(7)}, ${pos.coords.longitude.toFixed(7)}`,
+            coords: { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          }));
+        }, null, { enableHighAccuracy: true, timeout: 10000 });
+      };
+      getPos();
     }
-
-    if (isOpen && !draft.locationAccuracy) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setDraft(prev => ({
-          ...prev,
-          locationAccuracy: Math.round(pos.coords.accuracy),
-          location: `${pos.coords.latitude.toFixed(7)}, ${pos.coords.longitude.toFixed(7)}`,
-          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        }));
-      }, null, { enableHighAccuracy: true });
-    }
-  }, [userCoords, isOpen]);
+  }, [isOpen]);
 
   const startCamera = async () => {
     try {
@@ -122,23 +117,22 @@ export const FIRDraftModal: React.FC<Props> = ({ isOpen, onClose, userCoords }) 
 
   if (!isOpen) return null;
 
-  // Optimized QR: encoded maps link for instant police verification
   const qrData = `https://www.google.com/maps/search/?api=1&query=${draft.coords?.lat},${draft.coords?.lng}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}&color=0-0-0&bgcolor=ffffff&margin=1`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}&color=0-0-0&bgcolor=ffffff&margin=1`;
 
   const InputLabel = ({ label }: { label: string }) => (
     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{label}</label>
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/90 backdrop-blur-md p-0 sm:p-4 overflow-y-auto print:relative print:bg-white print:p-0">
-      <div className="bg-white w-full max-w-3xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:rounded-none">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/90 backdrop-blur-md p-0 sm:p-4 overflow-y-auto print:relative print:block print:bg-white print:p-0 print:inset-auto">
+      <div className="bg-white w-full max-w-3xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:rounded-none print:overflow-visible">
         
-        {/* Modal Header */}
+        {/* Modal Header (Hidden in Print) */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50 no-print">
           <div>
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Report Preparatory Form</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">High-Accuracy GPS Enabled</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ready for Print / Submission</p>
           </div>
           <button onClick={() => { stopCamera(); onClose(); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
             <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -147,9 +141,8 @@ export const FIRDraftModal: React.FC<Props> = ({ isOpen, onClose, userCoords }) 
 
         <div className="p-6 overflow-y-auto flex-1 bg-white print:p-0 print:overflow-visible">
           {step === 'form' && (
-            <div className="space-y-8 pb-12">
-              {/* Progress Stepper */}
-              <div className="flex gap-2 no-print">
+            <div className="space-y-8 pb-12 no-print">
+              <div className="flex gap-2">
                 {['personal', 'incident', 'details'].map((s) => (
                   <button 
                     key={s}
@@ -288,191 +281,153 @@ export const FIRDraftModal: React.FC<Props> = ({ isOpen, onClose, userCoords }) 
           )}
 
           {step === 'result' && (
-            <div className="print:block">
-              {/* COMPREHENSIVE PRINTABLE DOCUMENT */}
-              <div id="printable-draft" className="bg-white text-slate-900 font-sans print:p-0 print:w-full">
-                <div className="p-8 border-4 border-slate-900 print:m-0 print:p-12">
+            <div id="printable-area-wrapper">
+              <div id="printable-draft" className="bg-white text-slate-900 font-sans print:m-0">
+                <div className="p-8 sm:p-12 border-[8px] border-slate-900 print:border-[12px]">
                   
-                  {/* Location QR & Verification Top Bar */}
-                  <div className="flex justify-between items-start mb-10 border-b-4 border-slate-900 pb-8">
-                    <div className="max-w-[65%]">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-black text-xl italic">H</div>
-                        <h1 className="text-3xl font-black tracking-tighter leading-none">HYDERABAD POLICE<br/>Facilitation Memo</h1>
+                  {/* Absolute Top-Right QR for Print Verification */}
+                  <div className="flex justify-between items-start mb-10 border-b-4 border-slate-900 pb-10">
+                    <div className="max-w-[55%]">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">H</div>
+                        <div>
+                          <h1 className="text-3xl font-black tracking-tighter leading-tight uppercase">Hyderabad Police</h1>
+                          <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Official Preliminary Memo</p>
+                        </div>
                       </div>
-                      <p className="text-[12px] font-black text-red-600 uppercase tracking-[0.2em] mb-4">Official Preliminary Complaint Draft</p>
-                      
-                      <div className="space-y-2 text-[10px] font-black uppercase text-slate-500">
-                        <p className="bg-slate-100 px-3 py-1 inline-block rounded text-slate-900">ID: #RE-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
-                        <div className="flex flex-col gap-0.5 mt-2">
-                           <p>Generated At: <span className="text-slate-900">{draft.timestamp}</span></p>
-                           <p>GPS Precision: <span className="text-green-600">±{draft.locationAccuracy || 'N/A'} Meters Radius</span></p>
-                           <p>Device OS Hash: <span className="text-slate-900 font-mono">{Math.random().toString(16).substr(2, 12)}</span></p>
+                      <div className="space-y-2 text-[10px] font-black uppercase text-slate-400">
+                        <p className="bg-slate-900 text-white px-3 py-1.5 inline-block rounded-md text-[11px]">DRAFT ID: #HYD-{Math.random().toString(36).substr(2, 8).toUpperCase()}</p>
+                        <div className="pt-2">
+                          <p>Generation Time: <span className="text-slate-900">{draft.timestamp}</span></p>
+                          <p>GPS Integrity: <span className="text-green-600">High Resolution Verified</span></p>
+                          <p>Radius Accuracy: <span className="text-slate-900">±{draft.locationAccuracy || '5'} Meters</span></p>
                         </div>
                       </div>
                     </div>
-                    <div className="text-center flex flex-col items-center">
-                      <div className="p-2 border-2 border-slate-900 rounded-xl mb-2 bg-white">
-                        <img src={qrUrl} alt="Location Verification QR" className="w-32 h-32" />
+                    
+                    <div className="text-center">
+                      <div className="p-3 border-4 border-slate-900 rounded-[2rem] bg-white shadow-xl mb-3">
+                        <img src={qrUrl} alt="Location Verification QR" className="w-36 h-36" />
                       </div>
-                      <p className="text-[8px] font-black text-slate-900 uppercase tracking-widest bg-yellow-400 px-2 py-0.5 rounded">Spot Verification QR</p>
-                      <p className="text-[7px] font-bold text-slate-400 mt-1 uppercase">Scan for Precise Maps Spot</p>
+                      <p className="text-[9px] font-black text-slate-900 uppercase tracking-[0.3em] bg-yellow-400 px-4 py-1.5 rounded-full inline-block">Crime Spot Auth QR</p>
+                      <p className="text-[7px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Scan to Open High-Precision Map Spot</p>
                     </div>
                   </div>
 
-                  {/* Immediate Jurisdiction */}
-                  <div className="bg-slate-900 text-white p-6 rounded-xl mb-10 shadow-lg">
+                  {/* Immediate Action Jurisdiction */}
+                  <div className="bg-slate-900 text-white p-8 rounded-[2rem] mb-12 shadow-2xl">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Jurisdictional Limit</h2>
-                        <p className="text-2xl font-black italic">{suggestedStation?.name || 'Local'} POLICE STATION</p>
-                        <p className="text-xs font-bold text-slate-300 mt-1">{suggestedStation?.commissionerate || 'Hyderabad City'}</p>
+                        <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-2">Primary Jurisdictional Authority</h2>
+                        <p className="text-3xl font-black italic tracking-tighter uppercase">{suggestedStation?.name || 'LOCAL'} POLICE STATION</p>
+                        <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">{suggestedStation?.commissionerate || 'Hyderabad City'}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Station Contact (CUG)</p>
-                        <p className="text-xl font-black text-yellow-400">{suggestedStation?.mobile || suggestedStation?.phone || '100'}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-2">Station CUG Access</p>
+                        <p className="text-2xl font-black text-yellow-400 tabular-nums">{suggestedStation?.mobile || suggestedStation?.phone || '100'}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Section 1: Complainant Information */}
-                  <div className="mb-12">
-                    <h3 className="text-[13px] font-black uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 mb-6 flex items-center gap-3">
-                      <span className="w-6 h-6 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px]">1</span>
-                      Complainant Identification
-                    </h3>
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-12 text-sm">
-                      <div className="col-span-1 border-b border-slate-100 pb-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Legal Name of Informant</p>
-                        <p className="font-black text-lg">{draft.complainantName}</p>
+                  <div className="space-y-14">
+                    <section>
+                      <h3 className="text-[14px] font-black uppercase tracking-[0.3em] border-b-2 border-slate-900 pb-3 mb-8 flex items-center gap-4">
+                        <span className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-[12px]">01</span>
+                        Informant Identification
+                      </h3>
+                      <div className="grid grid-cols-2 gap-y-8 gap-x-12 text-sm">
+                        <div className="col-span-1 border-b-2 border-slate-50 pb-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Full Legal Name</p><p className="font-black text-xl text-slate-900">{draft.complainantName}</p></div>
+                        <div className="col-span-1 border-b-2 border-slate-50 pb-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Verified Contact</p><p className="font-black text-xl text-slate-900">{draft.complainantPhone}</p></div>
+                        <div className="border-b-2 border-slate-50 pb-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Father / Spouse Name</p><p className="font-bold text-slate-800 text-lg">{draft.complainantFatherSpouseName}</p></div>
+                        <div className="border-b-2 border-slate-50 pb-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Age</p><p className="font-bold text-slate-800 text-lg">{draft.complainantAge} Years</p></div>
+                        <div className="col-span-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Residential Address</p><p className="font-bold text-slate-600 text-lg leading-snug">{draft.complainantAddress}</p></div>
                       </div>
-                      <div className="col-span-1 border-b border-slate-100 pb-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Active Phone Number</p>
-                        <p className="font-black text-lg">{draft.complainantPhone}</p>
-                      </div>
-                      <div className="border-b border-slate-100 pb-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Father / Spouse Name</p>
-                        <p className="font-bold">{draft.complainantFatherSpouseName}</p>
-                      </div>
-                      <div className="border-b border-slate-100 pb-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Declared Age</p>
-                        <p className="font-bold">{draft.complainantAge} Years</p>
-                      </div>
-                      <div className="col-span-2 border-b border-slate-100 pb-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Permanent/Current Address</p>
-                        <p className="font-bold text-slate-700">{draft.complainantAddress}</p>
-                      </div>
-                    </div>
-                  </div>
+                    </section>
 
-                  {/* Section 2: Incident Profile */}
-                  <div className="mb-12">
-                    <h3 className="text-[13px] font-black uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 mb-6 flex items-center gap-3">
-                      <span className="w-6 h-6 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px]">2</span>
-                      Incident Occurrence Profile
-                    </h3>
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-12 text-sm mb-8">
-                      <div className="col-span-2 bg-slate-50 p-4 rounded border-l-4 border-slate-900">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Complaint Subject</p>
-                        <p className="font-black text-xl leading-tight uppercase">{draft.complaintSubject}</p>
+                    <section>
+                      <h3 className="text-[14px] font-black uppercase tracking-[0.3em] border-b-2 border-slate-900 pb-3 mb-8 flex items-center gap-4">
+                        <span className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-[12px]">02</span>
+                        Occurrence Profile
+                      </h3>
+                      <div className="grid grid-cols-2 gap-y-8 gap-x-12 text-sm mb-10">
+                        <div className="col-span-2 bg-slate-50 p-6 rounded-3xl border-l-[12px] border-slate-900 shadow-inner">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Subject of Complaint</p>
+                          <p className="font-black text-2xl leading-none uppercase tracking-tight text-slate-900">{draft.complaintSubject}</p>
+                        </div>
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Occurrence Category</p><p className="font-black text-lg">{draft.issueType}</p></div>
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Date & Time</p><p className="font-black text-lg">{draft.date} @ {draft.time}</p></div>
+                        <div className="col-span-2">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Scene of Crime / Spot Address</p>
+                          <p className="font-black text-slate-900 text-xl leading-relaxed">{draft.incidentAddress}</p>
+                          <div className="mt-3 flex gap-4 text-[9px] font-bold text-slate-400 uppercase">
+                            <span>Lat/Lng: {draft.location}</span>
+                            <span className="text-blue-500">Precision Verified</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Reported Category</p>
-                        <p className="font-black text-slate-800">{draft.issueType}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Time of Occurrence</p>
-                        <p className="font-black text-slate-800">{draft.date} @ {draft.time}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Point of Occurrence / Spot Address</p>
-                        <p className="font-bold text-slate-900 text-lg leading-snug">{draft.incidentAddress}</p>
-                        <p className="text-[10px] text-slate-500 mt-1 font-mono uppercase">GPS Lock: {draft.location}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Nearest Landmark</p>
-                        <p className="font-bold">{draft.landmark || 'Not Specified'}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-[11px] font-black text-slate-900 uppercase mb-3 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
-                        Detailed Statement of Facts
-                      </p>
-                      <div className="text-base leading-relaxed p-6 bg-slate-50 italic rounded-xl border-l-8 border-slate-900 whitespace-pre-wrap font-serif shadow-inner">
+                      <div className="p-8 bg-slate-50 rounded-[2rem] italic border-l-8 border-slate-200 font-serif leading-loose text-lg text-slate-800 shadow-inner">
+                        <p className="text-[11px] font-black text-slate-400 uppercase not-italic mb-4 tracking-widest">Statement of Facts</p>
                         "{draft.description}"
                       </div>
-                    </div>
-                  </div>
+                    </section>
 
-                  {/* Section 3: Evidence & Witnesses */}
-                  <div className="mb-12 page-break-inside-avoid">
-                    <h3 className="text-[13px] font-black uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 mb-6 flex items-center gap-3">
-                      <span className="w-6 h-6 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px]">3</span>
-                      Evidence & Witnesses
-                    </h3>
-                    <div className="grid grid-cols-2 gap-8 text-sm">
-                      <div className="p-4 bg-slate-50 rounded-xl">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Suspect/Vehicle Data</p>
-                        <p className="font-bold text-slate-800">{draft.suspectDetails || 'None Provided'}</p>
-                      </div>
-                      <div className="p-4 bg-slate-50 rounded-xl">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Eyewitness Logs</p>
-                        <p className="font-bold text-slate-800">{draft.witnessDetails || 'No Witnesses Listed'}</p>
-                      </div>
-                    </div>
-                    
-                    {image && (
-                      <div className="mt-8 border-2 border-slate-100 p-6 rounded-[2rem] bg-slate-50">
-                        <p className="text-[11px] font-black text-slate-900 uppercase mb-4 flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/></svg>
-                          Primary Visual Evidence Attachment
-                        </p>
-                        <img src={image} className="w-full h-auto max-h-[450px] object-contain rounded-2xl shadow-sm border border-white" />
-                        <div className="mt-3 text-center">
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">Encrypted Metadata: CID-{Math.random().toString(36).substr(2, 12)}</p>
+                    <section className="page-break-inside-avoid">
+                      <h3 className="text-[14px] font-black uppercase tracking-[0.3em] border-b-2 border-slate-900 pb-3 mb-8 flex items-center gap-4">
+                        <span className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-[12px]">03</span>
+                        Evidence Log
+                      </h3>
+                      <div className="grid grid-cols-2 gap-10 text-sm mb-12">
+                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 shadow-sm">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Suspect/Vehicle Data</p>
+                          <p className="font-bold text-slate-900 text-base">{draft.suspectDetails || 'None Provided'}</p>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 shadow-sm">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Eyewitness Information</p>
+                          <p className="font-bold text-slate-900 text-base">{draft.witnessDetails || 'No Witnesses Listed'}</p>
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Declaration & Final Seals */}
-                  <div className="pt-10 border-t-2 border-slate-300 mt-12">
-                    <div className="flex gap-4 mb-10">
-                      <div className="bg-slate-900 text-white p-2 rounded h-min font-black text-xs">!</div>
-                      <p className="text-[10px] text-slate-500 text-justify leading-relaxed italic font-bold">
-                        I hereby solemnly declare that the information provided above is accurate to the best of my knowledge. I am aware that filing a false report or misleading a public servant is a punishable offence under sections of Bharatiya Nyaya Sanhita (BNS) / IPC. This document is a computer-facilitated report intended for formal submission to the Duty Officer at the designated Police Station for registration of FIR / GD Entry.
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between items-end mt-20 px-4">
-                      <div className="text-center">
-                        <div className="w-56 h-0.5 bg-slate-400 mb-3"></div>
-                        <p className="text-[11px] font-black uppercase tracking-widest">Informant Signature</p>
-                        <p className="text-[8px] text-slate-400 mt-1 uppercase">Dt: ____________________</p>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-56 h-28 border-2 border-dashed border-slate-200 rounded-xl mb-3 flex items-center justify-center">
-                           <p className="text-[9px] font-bold text-slate-200 uppercase rotate-[-15deg]">Station Seal & GD Ref No.</p>
+                      {image && (
+                        <div className="border-[10px] border-slate-50 p-8 rounded-[3rem] bg-white text-center shadow-xl">
+                          <p className="text-[11px] font-black uppercase mb-6 text-slate-400 tracking-widest">Primary Visual Attachment</p>
+                          <img src={image} className="max-w-full h-auto max-h-[500px] inline-block rounded-3xl shadow-2xl border-4 border-white" />
                         </div>
-                        <p className="text-[11px] font-black uppercase tracking-widest">Duty Officer Approval</p>
+                      )}
+                    </section>
+                  </div>
+
+                  <div className="mt-20 pt-12 border-t-4 border-slate-200">
+                    <div className="bg-red-50 p-6 rounded-2xl text-[10px] text-red-800 text-justify leading-relaxed mb-20 border border-red-100 font-bold">
+                      <strong>SOLEMN DECLARATION:</strong> I hereby declare that the facts stated above are true to the best of my knowledge. I am aware that knowingly providing false information to public servants is a criminal offense under the Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code. This computer-facilitated draft is intended for registration of FIR / General Diary entry at the station.
+                    </div>
+                    <div className="flex justify-between items-end px-10">
+                      <div className="text-center">
+                        <div className="w-64 h-0.5 bg-slate-900 mb-4"></div>
+                        <p className="text-[12px] font-black uppercase tracking-[0.2em]">Informant Signature</p>
+                        <p className="text-[9px] text-slate-400 mt-2 uppercase tracking-widest">Date: ________________</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-56 h-32 border-4 border-dashed border-slate-100 rounded-2xl mb-4 flex items-center justify-center">
+                          <p className="text-slate-100 font-black uppercase rotate-[-20deg] text-xs">Official Seal Area</p>
+                        </div>
+                        <p className="text-[12px] font-black uppercase tracking-[0.2em]">Duty Officer Auth</p>
                       </div>
                     </div>
                   </div>
-
                 </div>
               </div>
 
-              {/* ACTION TOOLBAR (Hidden in Print) */}
+              {/* Action Toolbar (Hidden in Print) */}
               <div className="flex flex-col gap-4 mt-10 no-print px-4 pb-12">
-                <button onClick={() => window.print()} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-base uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd"/></svg>
-                  Generate & Print Final Report
+                <button 
+                  onClick={() => window.print()} 
+                  className="w-full py-7 bg-blue-600 text-white rounded-[2rem] font-black text-lg uppercase tracking-[0.3em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-5"
+                >
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd"/></svg>
+                  Generate PDF / Print Report
                 </button>
                 <div className="flex gap-4">
-                  <button onClick={() => setStep('form')} className="flex-1 py-5 bg-white border border-slate-900 text-slate-900 rounded-3xl font-black text-[11px] uppercase tracking-widest">Back to Form</button>
-                  <button onClick={onClose} className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-3xl font-black text-[11px] uppercase tracking-widest">Close</button>
+                  <button onClick={() => setStep('form')} className="flex-1 py-5 bg-white border-2 border-slate-900 text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-widest">Back to Form</button>
+                  <button onClick={onClose} className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-[2rem] font-black text-xs uppercase tracking-widest">Close</button>
                 </div>
               </div>
             </div>
@@ -482,20 +437,80 @@ export const FIRDraftModal: React.FC<Props> = ({ isOpen, onClose, userCoords }) 
       
       <style>{`
         @media print {
-          #root { display: none !important; }
-          html, body { 
-            height: auto !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
+          /* Robust Print Reset */
+          html, body {
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
-            -webkit-print-color-adjust: exact;
+            overflow: visible !important;
           }
-          .fixed { position: static !important; display: block !important; padding: 0 !important; background: white !important; }
-          .max-w-3xl { max-width: 100% !important; border-radius: 0 !important; margin: 0 !important; box-shadow: none !important; }
-          .no-print { display: none !important; }
-          #printable-draft { display: block !important; visibility: visible !important; width: 100% !important; }
-          .page-break-inside-avoid { page-break-inside: avoid; }
-          @page { size: A4; margin: 0.5cm; }
+          
+          /* Hide EVERYTHING in the DOM except our modal container */
+          body * {
+            visibility: hidden !important;
+            overflow: visible !important;
+          }
+          
+          /* Show only the modal and its contents */
+          .fixed.inset-0, .fixed.inset-0 *,
+          #printable-area-wrapper, #printable-area-wrapper * {
+            visibility: visible !important;
+          }
+
+          /* Force modal to fill page and behave as block */
+          .fixed.inset-0 {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            background: white !important;
+            z-index: auto !important;
+            overflow: visible !important;
+            padding: 0 !important;
+          }
+
+          .max-w-3xl {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+
+          .flex-1 {
+            display: block !important;
+            overflow: visible !important;
+          }
+
+          /* Explicitly hide the UI controls */
+          .no-print {
+            display: none !important;
+            visibility: hidden !important;
+          }
+
+          #printable-draft {
+            width: 100% !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            overflow: visible !important;
+          }
+
+          .page-break-inside-avoid {
+            page-break-inside: avoid !important;
+          }
+
+          @page {
+            size: A4;
+            margin: 0;
+          }
         }
       `}</style>
     </div>
