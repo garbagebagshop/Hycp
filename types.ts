@@ -29,17 +29,24 @@ export interface LocationState {
 
 export interface FIRDraft {
   issueType: string;
+  complaintSubject: string;
   date: string;
   time: string;
   location: string;
+  locationAccuracy?: number;
   landmark: string;
+  incidentAddress: string;
   description: string;
   timestamp: string;
   complainantName: string;
+  complainantAge: string;
+  complainantFatherSpouseName: string;
+  complainantAddress: string;
   complainantPhone: string;
   suspectDetails: string;
   vehicleDetails: string;
   witnessDetails: string;
+  stolenPropertyDetails?: string;
   coords?: { lat: number; lng: number };
   imageData?: string;
 }
